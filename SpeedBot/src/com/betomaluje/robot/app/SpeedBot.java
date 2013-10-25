@@ -8,6 +8,8 @@ import ioio.lib.util.IOIOLooperProvider;
 import ioio.lib.util.android.IOIOAndroidApplicationHelper;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import android.app.Application;
 import android.util.Log;
@@ -26,14 +28,15 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 	private String TAG = "SpeedBot";
 	public Robot player;
 	public Boolean IS_CONNECTED = false, IS_DAMAGED = false;
-	public int selected_enemy = 0, selected_robot = 0, GAME_TEMPO = 1000, servo_progress = 0;
-	public IOIOLooper sharedInstance = null;
+	public int selected_enemy = 0, selected_robot = 0, GAME_TEMPO = 1000,
+			servo_progress = 0;
+	private IOIOLooper sharedInstance = null;
 	public static SpeedBot sharedSpeedBot = null;
-	public float punch_threshold = 0.28f;
+	private float punch_threshold = 0.28f;
 
-	public HashMap<String, Motor> _motores = null;
-	public HashMap<String, Servo> _servos = null;
-	public HashMap<String, Piezo> _piezos = null;
+	private HashMap<String, Motor> _motores = null;
+	private HashMap<String, Servo> _servos = null;
+	private HashMap<String, Piezo> _piezos = null;
 
 	public static SpeedBot getInstance() {
 		if (sharedSpeedBot == null) {
@@ -162,7 +165,7 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 					+ " using addServo first.");
 		}
 	}
-	
+
 	public void moveServo(String id) {
 		Servo s = _servos.get(id);
 		if (_servos != null && s != null) {
@@ -194,7 +197,8 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 
 				speed = player.getSpeed();
 
-				standbyPin_ = ioio_.openDigitalOutput(IOIOBoardValues.STBY_PIN, true);
+				standbyPin_ = ioio_.openDigitalOutput(IOIOBoardValues.STBY_PIN,
+						true);
 
 				for (Motor m : _motores.values()) {
 					m.setIOIO(ioio_);
@@ -237,7 +241,7 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 		}
 
 		@Override
-		public void disconnected(){
+		public void disconnected() {
 			// TODO Auto-generated method stub
 			super.disconnected();
 			IS_CONNECTED = false;
@@ -246,7 +250,12 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 		private void checkMotors() throws ConnectionLostException,
 				InterruptedException {
 
-			for (Motor m : _motores.values()) {
+			Iterator<Entry<String, Motor>> it = _motores.entrySet().iterator();
+
+			while (it.hasNext()) {
+				Entry<String, Motor> entry = (Entry<String, Motor>) it.next();
+
+				Motor m = entry.getValue();
 				if (!m.getMove()) {
 					m.brake();
 				} else {
@@ -256,6 +265,9 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 						m.move(-1 * speed);
 					}
 				}
+
+				// avoids a ConcurrentModificationException
+				it.remove();
 			}
 		}
 
@@ -263,28 +275,29 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 				InterruptedException {
 			try {
 
-				if (_servos.get("right").getMove()) {
-					
-					if(servo_progress != 0){
-						_servos.get("right").moveWithProgress(servo_progress);
-					} else {
-						_servos.get("right").move();
-					}
-										
-				} else {
-					_servos.get("right").returnStart();
-				}
+				Iterator<Entry<String, Servo>> it = _servos.entrySet()
+						.iterator();
 
-				if (_servos.get("left").getMove()) {
-					
-					if(servo_progress != 0){
-						_servos.get("left").moveWithProgress(servo_progress);
+				while (it.hasNext()) {
+					Entry<String, Servo> entry = (Entry<String, Servo>) it
+							.next();
+
+					Servo s = entry.getValue();
+
+					if (s.getMove()) {
+
+						if (servo_progress != 0) {
+							s.moveWithProgress(servo_progress);
+						} else {
+							s.move();
+						}
+
 					} else {
-						_servos.get("left").move();
-					}					
-					
-				} else {
-					_servos.get("left").returnStart();
+						s.returnStart();
+					}
+
+					// avoids a ConcurrentModificationException
+					it.remove();
 				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
@@ -297,15 +310,25 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 			IS_DAMAGED = false;
 			float damage = 0.0f;
 			try {
-				for (Piezo p : _piezos.values()) {
+
+				Iterator<Entry<String, Piezo>> it = _piezos.entrySet()
+						.iterator();
+
+				while (it.hasNext()) {
+					Entry<String, Piezo> entry = (Entry<String, Piezo>) it
+							.next();
+					Piezo p = entry.getValue();
 
 					damage = p.readPiezo();
-					
+
 					if (damage >= punch_threshold) {
 						int current_health = (int) (player.getCurrent_health() - damage * 1000);
 						player.setCurrent_health(current_health);
 						IS_DAMAGED = true;
 					}
+
+					// avoids a ConcurrentModificationException
+					it.remove();
 				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
@@ -328,15 +351,15 @@ public class SpeedBot extends Application implements IOIOLooperProvider {
 		return player;
 	}
 
-	public HashMap<String, Motor> get_motores() {
+	public HashMap<String, Motor> getMotors() {
 		return _motores;
 	}
-	
-	public HashMap<String, Servo> get_servos() {
+
+	public HashMap<String, Servo> getServos() {
 		return _servos;
 	}
-	
-	public HashMap<String, Piezo> get_piezos() {
+
+	public HashMap<String, Piezo> getPiezos() {
 		return _piezos;
 	}
 }
