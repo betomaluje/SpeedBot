@@ -1,4 +1,4 @@
-package com.betomaluje.robot;
+package com.betomaluje.speedbot.electronics;
 
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
@@ -7,12 +7,18 @@ import ioio.lib.api.exception.ConnectionLostException;
 
 public class Motor {
 
+	public enum Direction {
+		FORWARD, BACKWARD
+	}
+
 	private IOIO ioio_;
 
 	private PwmOutput pwm;
 	private DigitalOutput in1, in2;
 	private int pwmPin = 0, in1Pin = 0, in2Pin = 0;
 	private Boolean move = false, forward = true;
+
+	private float speed = 0.0f;
 
 	private int pwmFrequency = 100000;
 
@@ -23,22 +29,22 @@ public class Motor {
 
 		this.in1 = ioio_.openDigitalOutput(in1Pin, false);
 		this.in2 = ioio_.openDigitalOutput(in2Pin, false);
-		
+
 		brake();
 	}
 
 	public Motor(IOIO ioio) throws ConnectionLostException {
 		ioio_ = ioio;
 	}
-	
-	public Motor(){
-		
+
+	public Motor() {
+
 	}
 
-	public void setIOIO(IOIO ioio){
+	public void setIOIO(IOIO ioio) {
 		this.ioio_ = ioio;
 	}
-	
+
 	public void setPwmPin(int pwmPin) {
 		this.pwmPin = pwmPin;
 	}
@@ -54,7 +60,7 @@ public class Motor {
 			this.pwm = ioio_.openPwmOutput(pwmPin, pwmFrequency);
 			this.in1 = ioio_.openDigitalOutput(in1Pin, false);
 			this.in2 = ioio_.openDigitalOutput(in2Pin, false);
-			
+
 			brake();
 		} else {
 			throw new NullPointerException(
@@ -79,30 +85,57 @@ public class Motor {
 		this.pwmFrequency = freq;
 	}
 
-	public void move(float speed) throws ConnectionLostException {		
-		if (speed > 0) {			
-			moveForward(speed);
+	/**
+	 * Sets the speed of the motor.
+	 * 
+	 * @param s
+	 *            : Value between 0.0 and 1.0 to set as the motor's speed.
+	 */
+	public void setSpeed(float s) {
+		this.speed = constrainSpeed(s);
+	}
+
+	/**
+	 * Gets the motor's speed
+	 * 
+	 * @return the speed
+	 */
+	public float getSpeed() {
+		return speed;
+	}
+
+	public void move() throws ConnectionLostException {
+		if (speed > 0) {
+			moveForward();
 		} else if (speed < 0) {
-			moveBackward(-1 * speed);
+			moveBackward();
 		} else {
 			brake();
 		}
-	}	
-
-	public void moveForward(float speed) throws ConnectionLostException {
-		move = true;
-		forward = true;
-		pwm.setDutyCycle(constrainSpeed(speed));
-		in1.write(true);
-		in2.write(false);
 	}
 
-	public void moveBackward(float speed) throws ConnectionLostException {
-		move = true;
-		forward = false;
-		pwm.setDutyCycle(constrainSpeed(speed));
-		in1.write(false);
-		in2.write(true);
+	public void moveForward() throws ConnectionLostException {
+		if (speed > 0) {
+			move = true;
+			forward = true;
+			pwm.setDutyCycle(speed);
+			in1.write(true);
+			in2.write(false);
+		} else {
+			brake();
+		}
+	}
+
+	public void moveBackward() throws ConnectionLostException {
+		if (speed < 0) {
+			move = true;
+			forward = false;
+			pwm.setDutyCycle(-1 * speed);
+			in1.write(false);
+			in2.write(true);
+		} else {
+			brake();
+		}
 	}
 
 	public void brake() throws ConnectionLostException {
@@ -111,7 +144,7 @@ public class Motor {
 		in1.write(false);
 		in2.write(false);
 	}
-	
+
 	public Boolean getMove() {
 		return move;
 	}
@@ -119,7 +152,7 @@ public class Motor {
 	public void setMove(Boolean move) {
 		this.move = move;
 	}
-	
+
 	public Boolean getForward() {
 		return forward;
 	}
@@ -149,12 +182,12 @@ public class Motor {
 					"pwm, in1 and in2 must be set and ioio instance must be created! Try using the Motor(IOIO) constructor");
 		}
 	}
-	
-	public Boolean isNull(){
-		if(this == null){
+
+	public Boolean isNull() {
+		if (this == null) {
 			return true;
 		} else {
 			return false;
 		}
-	}		
+	}
 }

@@ -1,4 +1,4 @@
-package com.betomaluje.robot;
+package com.betomaluje.speedbot.electronics;
 
 import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
@@ -70,11 +70,11 @@ public class Servo {
 		this.pulsewidth = pulsewidth;
 	}
 
-	public int getReturn_start() {
+	public int getReturnStart() {
 		return return_start;
 	}
 
-	public void setReturn_start(int return_start) {
+	public void setReturnStart(int return_start) {
 		this.return_start = return_start;
 	}
 
