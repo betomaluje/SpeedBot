@@ -1,21 +1,23 @@
 SpeedBot
 ========
 
-I created this library to make it easier to everyone to implement electric components such as dc motors, servos or electric piezos into the [development board IOIO](https://github.com/ytai/ioio/wiki).
+With SpeedBot yo just have to focus on your app cycle and not in the IOIO cycle!
+
+I created this library to make it easier to everyone to implement electric components such as dc motors, photo-resistors or ldrs, servos or electric piezos into the [IOIO development board](https://github.com/ytai/ioio/wiki).
 It's very simple to use.
 
-The problem was that I wanted to make cool stuff with IOIO but didn't knew the specs of the different electronic components (as example, a servomotor is pwm output type and it's controlled by it's pulsewidth).
+The problem was that I wanted to make cool stuff with IOIO but didn't knew the specs of the different electronic components (for example, a servomotor has to be at pwm output pin type and it's controlled by it's pulsewidth).
 
-Electronics are not very familiar for me. I passed hours learning about it so I created this micro framework to help anyone who is like me and doesn't know much of electronics.
+I've spent hours learning about it so I created this library to help anyone who is like me and doesn't know much of electronics.
 
 # Usage
-**First** thing you have to do is to **import the framework** to your ecplipse workspace, then **right click** -> **android** -> **check isLibrary** (below).
+**First** thing you have to do is to **import the library** to your ecplipse workspace, then **right click** -> **android** -> **check isLibrary** (below).
 
 **Then** on the _proyect you want to use it_, just **right click** it -> **android** -> **add library (below) and select SpeedBot**.
 
 # Example
 
-This is an example to implement a dc motor (over a motor driver such as TB6612FNG). All this code is within your activity where you want to control your robot.
+This is an example to implement a dc motor (over a motor driver such as TB6612FNG). All this code is within your Activity or Service where you want to control your board. Also you don't have to extend IOIOActivty or IOIOService, just our regular Activity and Service.
 
 ## Step 1: getting a SpeedBot Instance
 ```java
@@ -23,94 +25,105 @@ This is an example to implement a dc motor (over a motor driver such as TB6612FN
 private SpeedBot sb = SpeedBot.getInstance();
 ```
 
-Once you have a instance, you have to implement Runnable on your Activity and add this Overriden method
+## Step 2: setting the Timer
+Once you have a instance, you can set the loop time of the board by calling:
 
 ```java
-public void run() {
-    if (sb.getIS_CONNECTED()) {
-        Log.v("YOUR ACTIVITY", "Connection Established!");
-    } else {
-	Log.v("YOUR ACTIVITY", "Connection Lost!");
-    }
-}
+sb.setTiming(200);
 ```
+The default time is 1000 [ms].
 
-When you have this, somewhere in your code (let's say on your OnCreate method), you must add the electronic components you're using. In this example:  
+## Step 3: adding components
+Now somewhere in your code (let's say on your OnCreate method), you must add the electronic components you're using. You can add the different components:
 
 ```java
 // both motors
-sb.addMotor("left", PWMA_PIN, AIN1_PIN, AIN2_PIN);
-sb.addMotor("right", PWMB_PIN, BIN1_PIN, BIN2_PIN);
-```
-the _addMotor_ method uses this parameters:
-```java
-public Motor addMotor(String id, int pwmPin, int in1Pin, int in2Pin)
-```
-where id is the identifier you provide to SpeedBot to know which motor to move on the future, and PWMA_PIN, AIN1_PIN, AIN2_PIN, PWMB_PIN, BIN1_PIN, BIN2_PIN are int numbers according on the physical pins you put your motor driver.  
-
-Finally, you must put this lines of code:
-
-```java
-//establishes the communication with the physical robot
-sb.create();
-sb.start();
+sb.addMotor("myMotor", 12, 13, 14);
+sb.addLed("myLed", 20);
+sb.addPushButton("menuButton", 22);
+sb.addRGBLed("myRGBLed", 23, 24, 25);
+sb.addLDR("photo-resistor", 27);
 ```
 
-Once you've added all your components, you can interact with them everywhere in your code. 
-
-The methods implemented on SpeedBot to interact with dc motors are:
+## Step 3.1 (optional): setting listeners
+For some components, you can set a listener to know when something relevant is happening:
 ```java
-public void moveMotor(String id, String direction)
-```
-where you must provide the same id used on the creation of the motor (addMotor method) and the direction has two different values: **"f"** to move **forward** and **"b"** to move **backwards**.
-
-To stop a motor you can use 
-```java
-public void stopMotor(String id)
+sb.setIOIOStatusListener(ioioListener);
+sb.setPushButtonListener(pushButtonListener);
+sb.setLedListener(ledListener);
+sb.setLDRListener(ldrListener);
 ```
 
-For example I move the motor forward and backwards using a joystick:  
+The IOIOStatusListener helps to know when the IOIO board is connecting, when it's looping and when it's disconnected. This way if you know it's disconnected, you can change your UI accordingly:
 
 ```java
-private JoystickMovedListener _listener = new JoystickMovedListener() {
-    private int my_x, my_y;
-    public void OnMoved(int x, int y) {
-	my_x = x;
-	my_y = -y;
-
-        //my_y and my_x values from 0.0 to 1.0
-	if (my_y > 0.6) {
-            // move forward
-	    sb.moveMotor("left", "f");
-	    sb.moveMotor("right", "f");
-	} else if (my_y < -1 * 0.6) {
-	    // move backward
-	    sb.moveMotor("left", "b");
-	    sb.moveMotor("right", "b");
-	} else if (my_x > 0.6) {
-	    // turn right
-	    sb.moveMotor("left", "f");
-	    sb.stopMotor("right");
-	} else if (my_x < -1 * 0.6) {
-	    // turn left
-	    sb.stopMotor("left");
-	    sb.moveMotor("right", "f");
-	} else {
-	    sb.stopMotor("left");
-	    sb.stopMotor("right");
+private IOIOStatusListener ioioListener = new IOIOStatusListener() {
+	@Override
+	public void onStatusChanged(Status status) {
+		// TODO Auto-generated method stub
+		if (status == Status.LOADING) {
+			Log.v(TAG, "Setting up IOIO...");
+		} else if (status == Status.LOOPING) {
+			// do things while looping :)
+			enableUI(true);
+		} else if (status == Status.DISCONNECTED) {
+			Log.v(TAG, "IOIO disconnected...");
+			enableUI(false);
+		}
 	}
-    }
- 
-    public void OnReleased() {
-        sb.stopAllMotors();
-    }
-
-    public void OnReturnedToCenter() {
-    }
 };
 ```
 
-The same applies to Servo class and Piezo class.
+There's also several listeners:
+PiezoListener:
+```java
+public void onRead(String id, float value);
+```
+Gives the id of the electric piezo and its value.
+
+PushButtonListener:
+```java
+public void onPressed(String id);
+```
+Gives the id of the pressed button.
+
+LedListener:
+```java
+public void onStatusChanged(String id, boolean isON);
+```
+Gives the identifier for that led and its status (on or off).
+
+LDRListener:
+```java
+public void onRead(String id, float value);
+```
+Gives the identifier of the ldr and its value. 1.0 it's maximum value, 0.0 it's minimum.
+
+## Step 4: establishing communication with the IOIO board.
+Finally, you must put this lines of code to establish the communication with the IOIO board:
+```java
+// establishes the communication with the physical board
+sb.create();
+sb.start();
+```
+## Step 5: Interact with your robot!
+Once you've added all your components, you can interact with them everywhere in your code. 
+
+Some of the methods implemented on SpeedBot to interact with your components are:
+```java
+// moves "myMotor" forward. Two different values, Motor.Direction.BACKWARD and Motor.Direction.FORWARD
+sb.moveMotor("myMotor", Motor.Direction.FORWARD);
+
+// turns "myLed" ON
+sb.turnLed("myLed", true);
+
+// changes "myRGBLed" color to red
+sb.setRGBLedColors("myRGBLed", 0, 0, 255);
+```
+
+Note: Remember to use the same id's to interact with your components!
+
+You can use all of this methods whenever you like in your code.
 
 The idea is that everyone can support it and add new implementations temperature sensors, humity sensors, RGB leds, etc.
 
