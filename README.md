@@ -3,21 +3,21 @@ SpeedBot
 
 With SpeedBot yo just have to focus on your app cycle and not in the IOIO cycle!
 
-I created this library to make it easier to everyone to implement electric components such as dc motors, photo-resistors or ldrs, servos or electric piezos into the [IOIO development board](https://github.com/ytai/ioio/wiki).
+I created this library to make it easier to everyone to implement electric components such as dc motors, photo-resistors or LDRs, servos or electric piezos into the [IOIO development board](https://github.com/ytai/ioio/wiki).
 It's very simple to use.
 
-The problem was that I wanted to make cool stuff with IOIO but didn't knew the specs of the different electronic components (for example, a servomotor has to be at pwm output pin type and it's controlled by it's pulsewidth).
+The problem was that I wanted to make cool stuff with IOIO but didn't knew the specs of the different electronic components (for example, a servomotor has to be at PWM output pin type and it's controlled by it's pulsewidth).
 
 I've spent hours learning about it so I created this library to help anyone who is like me and doesn't know much of electronics.
 
 # Usage
-**First** thing you have to do is to **import the library** to your ecplipse workspace, then **right click** -> **android** -> **check isLibrary** (below).
+**First** thing you have to do is to **import the library** to your Eclipse workspace, then **right click** -> **Android** -> **check isLibrary** (below).
 
-**Then** on the _proyect you want to use it_, just **right click** it -> **android** -> **add library (below) and select SpeedBot**.
+**Then** on the _project you want to use it_, just **right click** it -> **Android** -> **add library (below) and select SpeedBot**.
 
 # Example
 
-This is an example to implement a dc motor (over a motor driver such as TB6612FNG). All this code is within your Activity or Service where you want to control your board. Also you don't have to extend IOIOActivty or IOIOService, just our regular Activity and Service.
+This is an example to implement a dc motor (over a motor driver such as TB6612FNG). All this code is within your Activity or Service where you want to control your board. Also you don't have to extend IOIOActivity or IOIOService, just our regular Activity and Service.
 
 ## Step 1: getting a SpeedBot Instance
 ```java
@@ -97,7 +97,7 @@ LDRListener:
 ```java
 public void onRead(String id, float value);
 ```
-Gives the identifier of the ldr and its value. 1.0 it's maximum value, 0.0 it's minimum.
+Gives the identifier of the LDR and its value. 1.0 it's maximum value, 0.0 it's minimum.
 
 ## Step 4: establishing communication with the IOIO board.
 Finally, you must put this lines of code to establish the communication with the IOIO board:
@@ -131,4 +131,4 @@ Feel free to fork it, add things, etc and... of course... use it!
 
 I hope it helps somebody. If you have any questions, feel free to ask me.
 
-Thanks for your time and I hope this proyect gets bigger and bigger! :D
+Thanks for your time and I hope this project gets bigger and bigger! :D
